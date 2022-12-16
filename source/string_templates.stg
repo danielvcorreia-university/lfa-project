@@ -1,0 +1,375 @@
+module(name, stat, hasVars, hasScanner, hasPrintWriter, hasList, needsEntry, needsArrays) ::= <<
+<if(hasScanner)>
+import java.util.Scanner;
+<endif>
+<if(hasVars)>
+import java.util.HashMap;
+<endif>
+<if(needsEntry)>
+import java.util.Map.Entry;
+<endif>
+<if(hasPrintWriter)>
+import java.io.PrintWriter;
+import java.io.FileNotFoundException;
+<endif>
+<if(hasList)>
+import java.util.ArrayList;
+import java.util.List;
+<endif>
+<if(needsArrays)>
+import java.util.Arrays;
+<endif>
+
+public class <name> {
+    <if(hasVars)>
+    static HashMap\<String, String> vars = new HashMap\<>();
+    <endif>
+    <stats(stat)>
+}
+>>
+
+main(stat) ::= <<
+public static void main(String[] args) throws Exception {
+    <stats(stat)>
+}
+>>
+
+handle_var_number(stat, type, var, value) ::= <<
+<stats(stat)>
+<atrib_double(type, var, value)>
+>>
+
+stats(stat) ::= <<
+<if(stat)><stat; separator="\n"><endif>
+>>
+
+get_from_map(string, double, boolean, id, var) ::= <<
+<if(double)>
+double <var> = vars.containsKey("<id>") ? Double.parseDouble(vars.get("<id>")) : Double.NaN;
+<endif>
+<if(string)>
+String <var> = vars.containsKey("<id>") ? vars.get("<id>") : null;
+<endif>
+<if(boolean)>
+boolean <var> = vars.containsKey("<id>") ? Boolean.parseBoolean(vars.get("<id>")) : null;
+<endif>
+>>
+
+get_from_map_double(id, var) ::= <<
+double <var> = vars.containsKey("<id>") ? Double.parseDouble(vars.get("<id>")) : Double.NaN;
+>>
+
+get_from_map_string(id, var) ::= <<
+String <var> = vars.containsKey("<id>") ? vars.get("<id>") : null;
+>>
+
+get_from_map_boolean(id, var) ::= <<
+boolean <var> = vars.containsKey("<id>") ? Boolean.parseBoolean(vars.get("<id>")) : null;
+>>
+
+tmp_atrib(type, var, value) ::= <<
+<type> <var> = <value>;
+>>
+
+atrib(type, var, value, id, insideFunc, needComma, isQuestion, isInitialization) ::= <<
+<type> <var><if(!isQuestion)> =<endif><value><if(needComma)><if(isInitialization)> ""<endif>;<endif>
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(!isQuestion)>
+<if(id)>vars.put("<id>", <var>);<endif>
+<endif>
+>>
+
+atrib_double(type, var, value, id, insideFunc, needComma) ::= <<
+<type> <var><if(value)> = <value><endif><if(needComma)>;<endif>
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+atrib_boolean(type, var, value, id, insideFunc, needComma) ::= <<
+<type> <var> = <value><if(needComma)>;<endif>
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", Boolean.toString(<var>));<endif>
+>>
+
+atrib_unary(stat,id,type,var,op,e1) ::= <<
+<stats(stat)>
+<type> <var> = <op><e1>;
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+binary_operation(stat, id, type, var, e1, op, e2, insideFunc) ::= <<
+<stats(stat)>
+<type> <var> = <e1> <op> <e2>;
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+print(stat, text, ln) ::= <<
+<stats(stat)>
+System.out.print<ln>(<text>);
+>>
+
+function(name, return_type, building_return, param, paramsID, stat, ret) ::= <<
+public static <return_type> <name>(<param>) {
+    HashMap\<String, String> funcAuxMap = new HashMap\<>();
+    <if(param)>
+    // Store all variables from main the might be overwriten
+    String[] paramsIDs = {<paramsID>};
+    for (String paramID : paramsIDs) {
+        if (vars.containsKey(paramID)) {
+            funcAuxMap.put(paramID, vars.get(paramID));
+        }
+    }
+    <endif>
+
+    <stats(stat)>
+
+    <if(building_return)>
+    // Building the return statement
+    // Whatever important variable being saved in the vars map is not a problem
+    // because it will be removed in the next loop through funcAuxMap
+    <building_return>
+    <endif>
+
+    // Restore to the main map all variable stored in auxmap
+    for (Entry\<String, String> entry : funcAuxMap.entrySet()) {
+        vars.put(entry.getKey(), entry.getValue());
+    }
+
+    <if(ret)>
+    return <ret>;
+    <endif>
+}
+>>
+
+types_formater(type, id) ::= <<
+<type> <id>
+>>
+
+callfunc(name, param) ::= <<
+<name>(<param>);
+>>
+
+varmanip_front(var, action, id, insideFunc) ::= <<
+<var><action>;
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+varmanip_back(var, action, id, insideFunc) ::= <<
+<action><var>;
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+varmanip_number(newvar, var, action, number, mod_var, id, insideFunc) ::= <<
+<if(mod_var)>
+<get_from_map_double(mod_var, newvar)>
+<var><action><newvar>;
+<endif>
+<if(number)>
+<var><action><number>;
+<endif>
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", Double.toString(<var>));<endif>
+>>
+
+handle_func_param(type, var, value, double, boolean) ::= <<
+<tmp_atrib(type, var, value)>
+vars.put("<value>", <if(double)>Double.toString<endif><if(boolean)>Boolean.toString<endif>(<var>));
+>>
+
+read(file, type, var, id, insideFunc, varScanner) ::= <<
+Scanner <varScanner> = new Scanner(<file>);
+<type> <var> = <varScanner>.nextLine();
+<if(insideFunc)>
+// Store this variable if it is in main
+if (vars.containsKey("<id>")) funcAuxMap.put("<id>", vars.get("<id>"));
+<endif>
+<if(id)>vars.put("<id>", <var>);<endif>
+>>
+
+write(file, var, stat, string, double) ::= <<
+<if(stat)><stats(stat)><endif>
+try {
+    PrintWriter <var> = new PrintWriter(<file>);
+    <if(string)><var>.write(<string>);<endif>
+    <if(double)><var>.write(Double.toString(<double>));<endif>
+    <var>.close();
+} catch(FileNotFoundException e) {
+    System.out.println(e);
+}
+>>
+
+for_loop(stat, id, var, start, end, comp, increment, op) ::= <<
+for (double <var> = <start>; <var> <comp> <end>; <var><op>=<increment>) {
+    vars.put("<id>", Double.toString(<var>));
+    <stats(stat)>
+}
+>>
+
+for_in(stat, type, var, var1, var2, double, boolean, question) ::= <<
+for (<type> <var> : <var2>) {
+    <if(!question)>vars.put("<var1>", <if(double)>Double.toString(<endif><if(boolean)>Boolean.toString(<endif><var>)<if(double||boolean)>)<endif>;<endif>
+    <stats(stat)>
+}
+>>
+
+return_plain_val(val) ::= <<
+<if(val)><val><endif>
+>>
+
+list_double(init, var, tmpvar, tmpvar2, val) ::= <<
+<if(init)>List\<Double> <var> = new ArrayList\<>();<endif>
+<if(val)>
+int[] <tmpvar> = {<val>};
+for (int <tmpvar2> : <tmpvar>) {
+    <var>.add(Double.valueOf(<tmpvar2>));
+}
+<endif>
+>>
+
+list_string(init, var, tmpvar, tmpvar2, val, questionFetch) ::= <<
+<if(init)>List\<String> <var> = new ArrayList\<>();<endif>
+<if(questionFetch)>List\<String> <var> = Arrays.asList(<questionFetch>);<endif>
+<if(val)>
+String[] <tmpvar> = {<val>};
+for (String <tmpvar2> : <tmpvar>) {
+    <var>.add(<tmpvar2>);
+}
+<endif>
+>>
+
+list_boolean(init, var, tmpvar, tmpvar2, val) ::= <<
+<if(init)>List\<Boolean> <var> = new ArrayList\<>();<endif>
+<if(val)>
+boolean[] <tmpvar> = {<val>};
+for (boolean <tmpvar2> : <tmpvar>) {
+    <var>.add(<tmpvar2>);
+}
+<endif>
+>>
+
+conditional(s1, s2, not, id, op, equals) ::= <%
+<if(s1)>
+<if(not)><not>(<endif>
+<s1>
+<if(equals)><equals>(<endif>
+<if(op)> <op> <endif>
+<s2>
+<if(equals)>)<endif>
+<if(not)>)<endif>
+<endif>
+<if(id)><not><id><endif>
+%>
+
+do_while(stat, condition) ::= <<
+do {
+    <stats(stat)>
+} while (<condition>);
+>>
+
+while(stat, condition) ::= <<
+while (<condition>) {
+    <stats(stat)>
+}
+>>
+
+ifstat(condition, stat, elseifstat, final) ::= <<
+if (<condition>) {
+    <stats(stat)>
+}
+<if(elseifstat)>
+<elseifstat>
+<endif>
+<if(final)>
+else {
+    <final>
+}
+<endif>
+>>
+
+elsifstat(condition, stat)::= <<
+else if (<condition>) {
+    <stats(stat)>
+}
+>>
+
+hashMap(type, var, getQuestions, path) ::= <<
+<if(getQuestions)>try{
+   QuestionsMain.main("../questions/"+<path>+".qst");
+}catch(Exception ex){
+    System.out.println(ex);
+    System.exit(1);
+}
+<endif>
+HashMap\<String, <type>\> <var> = <if(getQuestions)>Question.getQuestions()<else>new HashMap\<>()<endif>;
+>>
+
+list_split(var, val, split) ::= "<var> = Arrays.asList(<val>.split(<split>));"
+
+hashMap_get(var, getter, key) ::= <<
+<var> = <getter>.get(<key>);
+>>
+
+hashMap_put(var, key, value, isDouble) ::= <<
+<var>.put(<key>, <if(isDouble)>Double.valueOf(<endif><value><if(isDouble)>)<endif>);
+>>
+
+hashMap_remove(var, key) ::= <<
+if(<var>.containsKey(<key>)){
+    <var>.remove(<key>);
+}
+>>
+
+hashMap_clear(var) ::= <<
+if(!<var>.isEmpty()){
+    <var>.clear();
+}
+>>
+add_atrib(var, isDouble)::= <<
+.add(<if(isDouble)>Double.valueOf(<endif><var><if(isDouble)>)<endif>);
+>>
+
+list_action(id,action)::= <<
+<id><action>
+>>
+
+remove_atrib(var)::= <<
+.remove(<var>);
+>>
+
+list_question(var, file, newVar, justInitialize, justAtrib) ::= <<
+<if(!justInitialize)>String <newVar> = "../questions/" + <file> + ".qst";
+QuestionsMain.main(<newVar>);
+<endif>
+<if(justInitialize)>List\<Question> <var> = new ArrayList\<>();
+<elseif(justAtrib)><var> = new ArrayList\<Question>(Question.getQuestions().values());
+<else>List\<Question> <var> = new ArrayList\<Question>(Question.getQuestions().values());
+<endif>
+>>
+
+list_clone(type, id, target) ::= "List\<<type>> <id> = new ArrayList(<target>);"
+
+question_fetch(id, type, double) ::= <%
+<id>.<type>
+%>
+
+get_random(min, max) ::= "(<min> + (int)(Math.random() * ((<max> - <min>) + 1)))"

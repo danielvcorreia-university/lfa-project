@@ -1,0 +1,9 @@
+main => 
+    list text l;
+    text t => "jlajsl";
+    l => add(t);
+    for(text m in l )=>
+        write(CONSOLE) => m;
+    >>   
+
+>>

@@ -1,0 +1,26 @@
+tries: 6
+points: 23
+
+
+<algarve> { title: "Onde fica o algarve?",
+type: MULTIPLE,
+difficulty: EASY,
+right: ["Portugal"],
+wrong: ["Africa","Espanha","Açores"] }
+
+
+<alemanha> { title: "De que nacionalidade era adolf hitler?",
+type: MULTIPLE,
+difficulty: EASY,
+tries: 1,
+points: 5,
+right: ["Alemã"],
+wrong: ["Portuguesa","Espanhola","Francesa"] }
+
+<UA> { title: "Na história portuguesa, quem foi salazar?",
+type: MULTIPLE,
+difficulty: EASY,
+tries: 2,
+points: 5,
+right: ["Um ditador"],
+wrong: ["Um bispo","Um mártir","Um vendedor de fruta","Um professor de programação"] }
